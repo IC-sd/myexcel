@@ -1,0 +1,27 @@
+# Local runtime, generated assets and source material stay outside code history.
+.runtime/
+.docx_review_erp_v13/
+**/node_modules/
+**/.npm-cache/
+**/dist/
+**/target/
+**/data/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/.env
+**/.env.*
+!**/.env.example
+**/*.local.*
+*.log
+*.db
+*.db-wal
+*.db-shm
+*.sqlite*
+*.sql.gz
+*.bak
+*.bundle
+*.pem
+*.key
+**/.DS_Store
+**/Thumbs.db

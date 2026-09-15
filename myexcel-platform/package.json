@@ -1,0 +1,32 @@
+{
+  "name": "generic-sheet-app-builder",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "A generic spreadsheet-style low-code application builder",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite --host 127.0.0.1 --port 3100",
+    "dev:api": "node --watch server/index.mjs",
+    "build": "vite build",
+    "start": "node server/index.mjs",
+    "test": "node --test",
+    "check": "npm run test && npm run build"
+  },
+  "dependencies": {
+    "@univerjs/presets": "0.15.5",
+    "mysql2": "3.24.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "rxjs": "7.8.2",
+    "vue": "3.5.21",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.1",
+    "vite": "7.1.4"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
