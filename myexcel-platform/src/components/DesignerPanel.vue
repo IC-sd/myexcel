@@ -166,7 +166,7 @@ async function createBenchmark() {
 <template>
   <div v-if="workbook" class="designer-page">
     <section class="designer-hero">
-      <div><span class="section-kicker">TEMPLATE DESIGNER</span><h1>{{ workbook.name }}</h1><p>配置字段、公式、数据来源、模板权限和发布版本。</p></div>
+      <div><span class="section-kicker">TEMPLATE DESIGNER</span><h1>{{ workbook.name }}</h1><p>配置字段、公式、表间关系和发布版本；扩展工具按需展开。</p></div>
       <div class="designer-actions"><span :class="['status-pill', workbook.status]">草稿 v{{ workbook.version }} · {{ workbook.publishedVersion ? `已发布 v${workbook.publishedVersion}` : '未发布' }}{{ dirty ? ' · 未保存修改' : '' }}</span><button v-if="workbook.publishedVersion" class="secondary-button" :disabled="locked" @click="emit('preview')">预览发布效果</button><button v-if="releases.some((item) => item.version !== workbook.publishedVersion)" class="secondary-button" :disabled="locked" @click="rollbackRelease">回滚上一发布版</button><button class="secondary-button" :disabled="locked" @click="saveDesign">保存草稿</button><button class="primary-button" :disabled="locked" @click="publish">保存并发布</button></div>
     </section>
 
@@ -186,23 +186,24 @@ async function createBenchmark() {
         </div></div>
       </details>
 
-      <section class="design-card">
-        <div class="card-title"><div><h2>数据来源说明</h2><p>仅记录来源说明，不建立数据库连接。业务记录是否连接 MySQL 由服务端配置决定。</p></div></div>
-        <label>来源类型<select v-model="dataSource.type"><option value="synthetic">合成数据</option><option value="static">静态录入</option><option value="database">外部数据库（预留）</option></select></label>
+      <details class="design-card legacy-card">
+        <summary><div><h2>可选：数据来源与性能工具</h2><p>合成数据说明、外部数据源预留和本地性能基准。</p></div></summary>
+        <div class="legacy-content"><label>来源类型<select v-model="dataSource.type"><option value="synthetic">合成数据</option><option value="static">静态录入</option><option value="database">外部数据库（预留）</option></select></label>
         <label>来源名称<input v-model="dataSource.name"></label>
         <label>连接说明<input v-model="dataSource.connection"></label>
         <div v-if="isAdmin" class="benchmark-box"><strong>合成性能基准</strong><p>生成多工作表、跨表公式和可调宽表，用于验证行数与渲染边界。</p><div><label>行数<input v-model.number="rowCount" type="number" min="100" max="10000"></label><label>列数<input v-model.number="columnCount" type="number" min="26" max="200"></label><button class="secondary-button" :disabled="busy" @click="createBenchmark">生成基准</button></div></div>
-      </section>
+        </div>
+      </details>
 
-      <section class="design-card">
-        <div class="card-title"><div><h2>模板级权限</h2><p>管理员固定为设计权限，只读账号固定为查看权限；可按模板调整工作人员账号权限。</p></div></div>
-        <div class="permission-list"><div v-for="permission in permissions" :key="permission.userId"><span><strong>{{ permission.displayName }}</strong><small>{{ permission.username }} · {{ permission.role }}</small></span><select v-model="permission.accessLevel" :disabled="busy || !isAdmin || permission.role !== 'editor'"><option value="view">查看</option><option value="edit">编辑</option><option value="design">设计/发布</option></select></div></div>
-      </section>
+      <details class="design-card legacy-card">
+        <summary><div><h2>可选：模板权限</h2><p>为演示角色设置查看、编辑或设计权限。</p></div></summary>
+        <div class="legacy-content permission-list"><div v-for="permission in permissions" :key="permission.userId"><span><strong>{{ permission.displayName }}</strong><small>{{ permission.username }} · {{ permission.role }}</small></span><select v-model="permission.accessLevel" :disabled="busy || !isAdmin || permission.role !== 'editor'"><option value="view">查看</option><option value="edit">编辑</option><option value="design">设计/发布</option></select></div></div>
+      </details>
 
-      <section class="design-card wide">
-        <div class="card-title"><div><h2>审计记录</h2><p>记录创建、保存、配置、权限和发布动作。</p></div></div>
-        <div class="audit-list"><div v-for="item in audit" :key="item.id"><span class="audit-action">{{ item.action }}</span><strong>{{ item.detail }}</strong><span>{{ item.userName }}</span><time>{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</time></div></div>
-      </section>
+      <details class="design-card wide legacy-card">
+        <summary><div><h2>可选：操作记录</h2><p>查看创建、保存、配置、权限和发布动作。</p></div></summary>
+        <div class="legacy-content audit-list"><div v-for="item in audit" :key="item.id"><span class="audit-action">{{ item.action }}</span><strong>{{ item.detail }}</strong><span>{{ item.userName }}</span><time>{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</time></div></div>
+      </details>
     </fieldset>
     <div v-if="message" class="designer-message" role="status">{{ message }} <button v-if="!ready && !loading" class="secondary-button" @click="load">重新加载</button></div>
   </div>

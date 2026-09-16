@@ -377,7 +377,7 @@ async function openVersions() {
 
     <aside class="sidebar">
       <div class="sidebar-heading">
-        <div><span class="section-kicker">WORKBOOKS</span><h2>业务工作簿</h2></div>
+        <div><span class="section-kicker">WORKBOOKS</span><h2>应用工作簿</h2></div>
         <button v-if="canEdit" class="icon-button" :disabled="busy" title="新建工作簿" @click="showCreate = true">＋</button>
       </div>
       <div class="workbook-list">
@@ -387,8 +387,8 @@ async function openVersions() {
         </button>
       </div>
       <div class="sidebar-note">
-        <strong>第一阶段</strong>
-        <p>表格应用核心闭环已完成；所有内置示例均为可重复生成的合成数据。</p>
+        <strong>当前版本</strong>
+        <p>表格应用核心闭环已完成；内置示例均可安全重建。</p>
       </div>
     </aside>
 

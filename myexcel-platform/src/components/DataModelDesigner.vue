@@ -214,15 +214,18 @@ async function runPreview() {
         <button class="secondary-button small" @click="edit((m) => m.rules.aggregates.splice(i, 1))">移除</button>
       </div>
 
-      <div class="model-toolbar"><strong>5. 简单审批流程</strong><button v-if="!modelValue.rules?.workflow" class="secondary-button small" @click="enableWorkflow">启用提交/通过/退回</button><button v-else class="secondary-button small" @click="edit((m) => delete m.rules.workflow)">停用流程</button></div>
-      <p v-if="modelValue.rules?.workflow" class="model-hint">已配置状态：{{ modelValue.rules.workflow.states.join(' → ') }}。提交允许管理员和工作人员，通过/退回仅允许管理员；可为转换配置一条受控回写。</p>
-      <div v-if="modelValue.rules?.workflow" v-for="(transition, t) in modelValue.rules.workflow.transitions" :key="transition.id" class="binding-row">
+      <details class="optional-model-section">
+        <summary><strong>可选增强：简单状态流</strong><span>{{ modelValue.rules?.workflow ? '已启用' : '未启用' }}</span></summary>
+        <div class="model-toolbar"><span>提交、通过、退回与受控回写不属于第一阶段核心闭环。</span><button v-if="!modelValue.rules?.workflow" class="secondary-button small" @click="enableWorkflow">启用状态流</button><button v-else class="secondary-button small" @click="edit((m) => delete m.rules.workflow)">停用状态流</button></div>
+        <p v-if="modelValue.rules?.workflow" class="model-hint">已配置状态：{{ modelValue.rules.workflow.states.join(' → ') }}。提交允许管理员和工作人员，通过/退回仅允许管理员；可为转换配置一条受控回写。</p>
+        <div v-if="modelValue.rules?.workflow" v-for="(transition, t) in modelValue.rules.workflow.transitions" :key="transition.id" class="binding-row">
         <label>转换 {{ transition.label }}（{{ transition.from }} → {{ transition.to }}）<select :aria-label="`回写关联字段 ${t + 1}`" :value="transition.writeback?.referenceFieldId || ''" @change="edit((m) => { const rule = m.rules.workflow.transitions[t]; if ($event.target.value) rule.writeback = { referenceFieldId: $event.target.value, targetFieldId: '', value: rule.writeback?.value ?? '' }; else delete rule.writeback; })"><option value="">不回写</option><option v-for="field in mainReferenceFields(modelValue)" :key="field.id" :value="field.id">{{ field.label }}</option></select></label>
         <template v-if="transition.writeback?.referenceFieldId">
           <label>回写目标字段<select :aria-label="`回写目标字段 ${t + 1}`" :value="transition.writeback.targetFieldId" @change="edit((m) => m.rules.workflow.transitions[t].writeback.targetFieldId = $event.target.value)"><option value="">选择字段</option><option v-for="field in lookupTargetFields(modelValue, { entityId: modelValue.document.entityId, referenceFieldId: transition.writeback.referenceFieldId })" :key="field.id" :value="field.id">{{ field.label }}</option></select></label>
           <label>回写值<input :aria-label="`回写值 ${t + 1}`" :value="transition.writeback.value ?? ''" placeholder="写入目标记录的固定值" @input="edit((m) => m.rules.workflow.transitions[t].writeback.value = $event.target.value)"></label>
         </template>
-      </div>
+        </div>
+      </details>
 
       <div class="model-check" role="status"><strong>{{ report.valid ? '模型和绑定校验通过' : '请先修正模型和绑定' }}</strong><ul v-if="!report.valid"><li v-for="(issue, index) in report.issues" :key="index">{{ issue.path }}：{{ issue.message }}</li></ul></div>
       <div class="model-check formula-compatibility" role="status"><strong>公式兼容检查：{{ formulaReport.supported }} 个支持，{{ formulaReport.unsupported }} 个阻断发布</strong><ul v-if="formulaReport.unsupported"><li v-for="formula in formulaReport.formulas.filter((item) => !item.supported)" :key="`${formula.sheetId}:${formula.address}`">{{ formula.sheetId }}!{{ formula.address }}：{{ formula.reasons.join('；') }}</li></ul></div>
@@ -240,6 +243,11 @@ async function runPreview() {
 <style scoped>
 .model-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .model-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 18px 0 12px; }
+.optional-model-section { margin: 20px 0 14px; border: 1px solid #dbe3ed; border-radius: 12px; background: #f8fafc; }
+.optional-model-section > summary { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; cursor: pointer; color: #263b54; }
+.optional-model-section > summary span { color: #718096; font-size: 12px; }
+.optional-model-section[open] { padding: 0 16px 14px; }
+.optional-model-section[open] > summary { margin: 0 -16px 4px; border-bottom: 1px solid #e4eaf1; }
 .model-hint, .model-designer small { color: #607089; font-size: 12px; line-height: 1.7; }
 .entity-card { border: 1px solid #dbe3ed; border-radius: 12px; padding: 16px; margin: 12px 0; background: #fbfcfe; }
 .entity-card summary { cursor: pointer; font-weight: 750; margin: -4px 0; padding: 4px 0; color: #263b54; }
