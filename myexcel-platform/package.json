@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "description": "A generic spreadsheet-style low-code application builder",
+  "license": "MIT",
+  "repository": "https://github.com/IC-sd/myexcel",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "vite --host 127.0.0.1 --port 3100",
