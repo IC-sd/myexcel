@@ -1,5 +1,8 @@
 # MyExcel
 
+[![CI](https://github.com/IC-sd/myexcel/actions/workflows/ci.yml/badge.svg)](https://github.com/IC-sd/myexcel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 一个使用 Vue、Univer 和 Node.js 构建的通用类 Excel 应用构建项目。它展示如何把表格模板转化为可以发布、填报、关联、保存和重新打开的结构化数据应用。
 
 项目不是现成 ERP，也不针对特定公司或行业。所有内置内容均为可再生成的合成示例。

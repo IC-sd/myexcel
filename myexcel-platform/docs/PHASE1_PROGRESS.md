@@ -19,12 +19,12 @@
 | 项目 | 当前事实 |
 |---|---|
 | 分支 | `phase1/foundation`，公开远程的 `main` 与该分支当前均指向干净公开基线 |
-| 阶段 | 阶段 1 已完成；阶段 2 的本地实现和浏览器验收已完成，等待远程 CI 和首个 release |
+| 阶段 | 阶段 1 已完成；阶段 2 的实现、浏览器验收和 Linux CI 已通过，仅待首个 release 发布 |
 | 产品入口 | `README.md`、本文件和 `PROJECT_BLUEPRINT.md` |
 | 数据边界 | 只使用可再生成的合成示例；不得接入或提交真实业务资料 |
 | 本地环境 | Node.js 24；SQLite 元数据与本地 JSON 业务记录默认启用，MySQL 13307 仅为可选适配器测试环境 |
 | 当前阻塞 | GitHub 默认分支仍需在仓库设置中改为 `main`，之后才能删除远程 `phase1/foundation` |
-| 下一步 | 推送并观察 GitHub Actions；确认发布 `v0.2.0` 首个公开 release |
+| 下一步 | 用户确认后发布 `v0.2.0`；在 GitHub 设置中把默认分支切换到 `main` |
 
 ## 3. 阶段 1 最小完成范围
 
@@ -73,9 +73,11 @@
 | 项目 | 状态 | 结果或下一步 |
 |---|---|---|
 | 默认零依赖记录存储 | 已完成 | 新增持久化本地 JSON 适配器；主从、关系、带出、汇总、幂等和重启重开有自动测试；MySQL 保留可选 |
-| 跨平台命令与快速开始 | 本地已验收，待 Linux CI | 根 README 使用 Node/npm 通用命令；Windows 干净数据目录已验证，Linux 交给 CI，macOS 暂无独立证据 |
+| 跨平台命令与快速开始 | 已完成 | 根 README 使用 Node/npm 通用命令；Windows 干净数据目录与 Linux CI 已验证，macOS 暂无独立证据 |
 | 许可证和社区文件 | 已完成 | MIT、第三方说明、贡献指南、安全策略、Issue/PR 模板已加入 |
-| 最小 CI | 已完成配置，待远程运行 | GitHub Actions 使用 Node 24 执行 `npm ci`、测试和构建 |
-| 首个 release | 已准备，未发布 | `CHANGELOG.md` 已形成 `v0.2.0` 说明；浏览器视觉与控制台检查通过，远程 CI 通过后创建 |
+| 最小 CI | 已完成 | GitHub Actions 使用 Node 24；Ubuntu 上的 `npm ci`、测试和构建均已通过 |
+| 首个 release | 已准备，未发布 | `CHANGELOG.md` 已形成 `v0.2.0` 说明；本地浏览器和远程 CI 均已验收，等待发布确认 |
+
+2026-09-19 远程 CI `35434155170` 已在 Ubuntu 上完成 `npm ci`、69 项测试和生产构建；`actions/checkout@v7` 与 `actions/setup-node@v7` 已消除 Node 20 弃用警告。GitHub 对未来 `ubuntu-latest` 镜像迁移的提示不影响当前结果。
 
 阶段 2 完成后项目即可公开体验；阶段 3 再补稳定 API、模板包和一种通用数据交换能力。阶段 4 只选做一个展示增强，不作为核心完成门槛。
