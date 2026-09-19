@@ -13,7 +13,7 @@ const emit = defineEmits(['edit-template']);
 const sheetContainer = ref(null);
 const template = shallowRef(null), entryModel = shallowRef(null), rows = ref([]), offset = ref(0), form = shallowRef(null);
 const busy = ref(false), dirty = ref(false), message = ref(''), permission = ref(false), scope = ref('own'), role = ref('viewer');
-const referenceOptions = ref({}), summaries = ref([]), recordAudit = ref([]);
+const referenceOptions = ref({}), summaries = ref([]), recordAudit = ref([]), storage = ref('local-json');
 const gridReady = ref(false);
 const gridCard = ref(null);
 const filters = ref({ dateFieldId: '', dateFrom: '', dateTo: '', workflowState: '' }), lastRefreshed = ref('');
@@ -36,6 +36,7 @@ const scopeMessage = computed(() => permission.value
 const emptyListMessage = computed(() => !permission.value && scope.value === 'own'
   ? '只读账号没有可查看的自有记录'
   : '此页暂无有权访问的记录');
+const storageLabel = computed(() => storage.value === 'mysql' ? 'MySQL' : '本地记录文件');
 const referenceInputs = computed(() => {
   if (!model.value) return [];
   const fields = new Map(model.value.entities.flatMap((entity) => entity.fields.map((field) => [`${entity.id}:${field.id}`, field])));
@@ -165,6 +166,7 @@ async function openGrid(snapshot, { clearValues = false, rowIds = {} } = {}) {
 async function load() {
   busy.value = true;
   try {
+    if (api.runtimeStatus) storage.value = (await api.runtimeStatus()).storage || 'local-json';
     const result = await api.runtimeSchema(props.workbookId);
     template.value = result.template;
     permission.value = result.canWrite;
@@ -294,7 +296,7 @@ async function save() {
     entryModel.value = saved.release.model;
     detailRowIds = detailRowIdentities(model.value, saved.record);
     pendingRequest = null;
-    const savedText = `${saved.replayed ? '已确认上次保存结果' : '已保存到 MySQL'} · 业务记录 v${saved.record.version}（模板未被修改）`;
+    const savedText = `${saved.replayed ? '已确认上次保存结果' : `已保存到${storageLabel.value}`} · 业务记录 v${saved.record.version}（模板未被修改）`;
     if (editRevision === savedRevision) {
       await openGrid(saved.snapshot, { rowIds: detailRowIds });
       message.value = savedText;
@@ -313,7 +315,7 @@ function exportRecord() { if (form.value?.id && !dirty.value) window.location.hr
 <template>
   <div class="record-page">
     <div class="record-heading record-page-title">
-      <div><span class="section-kicker">工作人员端 / 业务记录</span><h1>{{ template?.name || '业务记录' }}</h1><p>数据保存到 MySQL，发布模板和历史版式不会随填报改变。{{ scopeMessage }}</p></div>
+      <div><span class="section-kicker">工作人员端 / 业务记录</span><h1>{{ template?.name || '业务记录' }}</h1><p>数据保存到{{ storageLabel }}，发布模板和历史版式不会随填报改变。{{ scopeMessage }}</p></div>
       <div class="record-actions"><button v-if="canDesign" class="secondary-button" :disabled="busy" @click="mayLeave() && emit('edit-template')">编辑模板版式</button><button v-if="permission" class="primary-button" :disabled="busy || !template" @click="newRecord">新建业务记录</button></div>
     </div>
     <p class="record-note">{{ permission ? '在原模板填写或批量粘贴；保存时系统会复核关联资料和关键计算。' : '只读模式仅展示有权访问的发布数据，不提供新建、修改或保存。' }}</p>

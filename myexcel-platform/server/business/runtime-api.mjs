@@ -5,8 +5,8 @@ import { snapshotToXlsx } from '../workbook-codec.mjs';
 export async function handleRuntime({ path, url, request, response, store, records, json, readJson, requireUser }) {
   const user = requireUser(store, request, response);
   if (!user) return;
-  if (path === '/api/runtime/status' && request.method === 'GET') return json(response, 200, { configured: Boolean(records), storage: records ? 'mysql' : null });
-  if (!records) return json(response, 503, { error: '尚未配置 MySQL 业务库；不会回退为保存工作簿快照' });
+  if (path === '/api/runtime/status' && request.method === 'GET') return json(response, 200, { configured: Boolean(records), storage: records?.storage || null });
+  if (!records) return json(response, 503, { error: '业务记录存储不可用' });
   const match = path.match(/^\/api\/runtime\/([^/]+)\/(schema|records|references|summary)(?:\/([^/]+))?(?:\/(export|audit|workflow))?$/);
   if (!match) return json(response, 404, { error: '运行接口不存在' });
   const [, templateId, resource, id, action] = match;
@@ -44,8 +44,7 @@ export async function handleRuntime({ path, url, request, response, store, recor
     const loaded = await records.get(id, user, canRead);
     if (loaded.record.templateId !== templateId) return json(response, 404, { error: '记录不属于此模板' });
     if (action === 'audit') {
-      const [audit] = await records.pool.execute('SELECT actor_id AS actorId, action, revision, template_version AS templateVersion, created_at AS createdAt FROM mx_audit WHERE record_id = ? ORDER BY revision DESC, created_at DESC', [id]);
-      return json(response, 200, { audit });
+      return json(response, 200, { audit: await records.audit(id) });
     }
     if (action === 'workflow') return json(response, 405, { error: '流程操作必须使用 POST' });
     const projection = recordProjection(loaded, user);

@@ -107,7 +107,12 @@ export function recordAllowed(row, actor, templateAllowed, allowAll = false) {
 }
 
 export class BusinessRecords {
-  constructor(pool) { this.pool = pool; }
+  constructor(pool) { this.pool = pool; this.storage = 'mysql'; }
+
+  async audit(id) {
+    const [rows] = await this.pool.execute('SELECT actor_id AS actorId, action, revision, template_version AS templateVersion, created_at AS createdAt FROM mx_audit WHERE record_id = ? ORDER BY revision DESC, created_at DESC', [id]);
+    return rows;
+  }
 
   async registerRelease(conn, release) {
     const model = release.templateConfig?.businessModel;
@@ -390,6 +395,21 @@ export class BusinessRecords {
     finally { conn.release(); }
   }
 }
+
+// Shared, storage-neutral rules used by the default local adapter. Keeping
+// these in one place prevents local and MySQL modes from accepting different
+// records even though their persistence mechanisms differ.
+export const recordSupport = {
+  calendarDate,
+  canonical,
+  demandPolicyRequired,
+  fail,
+  hash,
+  protectedInput,
+  rowsOf,
+  spaceOf,
+  sumFor,
+};
 
 function clearHidden(model, snapshot, role) {
   const output = structuredClone(snapshot);

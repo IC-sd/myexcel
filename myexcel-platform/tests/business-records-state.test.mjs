@@ -105,7 +105,7 @@ test('grid accepts only bound value cells and keeps list-refresh failure separat
   assert.equal(payload.record.details.items[0].values.name, '粘贴行');
   assert.equal(view.state.dirty, false);
   assert.equal(view.state.form.id, 'saved');
-  assert.match(view.state.message, /已保存到 MySQL/);
+  assert.match(view.state.message, /已保存到/);
   assert.match(view.state.message, /列表刷新失败/);
   assert.doesNotMatch(view.state.message, /未确认保存成功/);
 });

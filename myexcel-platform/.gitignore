@@ -4,5 +4,7 @@ dist/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/*.records.json
+data/*.records.json.tmp
 *.log
 .env

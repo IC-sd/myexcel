@@ -26,13 +26,24 @@ function publish(store, model, snapshot, adminId) {
   return store.publishWorkbook({ id: book.id, expectedVersion: 2, userId: adminId });
 }
 
-test('runtime explicitly reports missing MySQL and never silently stores business data in SQLite', async () => {
+test('runtime uses zero-dependency local records by default', async () => {
   const c = await application();
   try {
     assert.equal((await c.call('/api/runtime/status')).status, 401);
     const cookie = await c.login('admin', 'Admin123!');
-    assert.deepEqual((await c.call('/api/runtime/status', cookie)).body, { configured: false, storage: null });
-    assert.equal((await c.call('/api/runtime/unknown/records', cookie)).status, 503);
+    assert.deepEqual((await c.call('/api/runtime/status', cookie)).body, { configured: true, storage: 'local-json' });
+    assert.equal((await c.call('/api/runtime/unknown/records', cookie)).status, 404);
+    const owner = c.app.store.authenticate('admin', 'Admin123!');
+    const { model, snapshot } = orderFixture();
+    const sourceModel = { schemaVersion: 1, dataSpaceId: 'local_demo', entities: [model.entities[0]], document: { entityId: 'supplier', fields: [{ fieldId: 'name', sheetId: 'form', cell: 'A2' }], details: [] } };
+    const source = publish(c.app.store, sourceModel, snapshot, owner.id);
+    const path = `/api/runtime/${source.id}`;
+    const created = await c.call(`${path}/records`, cookie, { templateVersion: 2, requestId: randomUUID(), record: { entityId: 'supplier', values: { name: '本地合成资料' }, details: {} } });
+    assert.equal(created.status, 201);
+    const loaded = await c.call(`${path}/records/${created.body.record.id}`, cookie);
+    assert.equal(loaded.status, 200);
+    assert.equal(loaded.body.record.values.name, '本地合成资料');
+    assert.equal((await c.call(`${path}/records/${created.body.record.id}/audit`, cookie)).body.audit.length, 1);
   } finally { await c.close(); }
 });
 

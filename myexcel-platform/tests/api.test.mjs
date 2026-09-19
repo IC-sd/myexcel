@@ -28,7 +28,10 @@ test('model preview is read-only, permission/version checked and invalid release
     const result = await preview(cookie, 1);
     assert.equal(result.response.status, 200);
     assert.equal(result.payload.persisted, false);
-    assert.deepEqual(result.payload.relationPreview, []);
+    assert.deepEqual(result.payload.relationPreview.map(({ fieldId, status }) => ({ fieldId, status })), [
+      { fieldId: 'supplier_id', status: 'no-match' },
+      { fieldId: 'order_id', status: 'empty' },
+    ]);
     assert.equal(result.payload.record.details.items[0].values.quantity, 2.5);
     assert.equal(context.app.store.getWorkbook(book.id).version, 1);
     assert.equal(context.app.store.listAudit(book.id).length, beforeAudit);

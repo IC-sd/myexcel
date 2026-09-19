@@ -25,10 +25,41 @@ export function demoDefinitions() {
     } : { lookups: [], calculations: [], aggregates: [] };
     const model = { schemaVersion: 1, dataSpaceId: 'generic_relation_demo', entities: structuredClone(entities), document: { entityId: entity.id,
       fields: entity.fields.map((field, index) => ({ fieldId: field.id, sheetId: 'form', cell: `B${index + 3}` })), details }, rules };
-    const cells = { 0: { 0: { v: `${entity.label}（完全合成）` } }, 1: { 0: { v: '模板仅负责版式，填写内容独立保存在 MySQL' } } };
+    const cells = { 0: { 0: { v: `${entity.label}（完全合成）` } }, 1: { 0: { v: '模板仅负责版式，填写内容独立保存在记录存储中' } } };
     entity.fields.forEach((field, index) => { cells[index + 2] = { 0: { v: field.label } }; });
     if (details.length) cells[10] = { 0: { v: '目录条目记录 ID' }, 1: { v: '数量' }, 2: { v: '本次确认值' } };
     const snapshot = { id: `wb-${randomUUID()}`, name: entity.label, appVersion: '0.1.0', locale: 'zhCN', sheetOrder: ['form'], sheets: { form: { id: 'form', name: entity.label, rowCount: 60, columnCount: 12, cellData: cells } } };
     return { key: entity.id, name: `${entity.label} · 通用示例`, model, snapshot };
   });
+}
+
+export async function seedDemo({ store, records }) {
+  const admin = store.listUsers().find((user) => user.username === 'admin');
+  const definitions = demoDefinitions(), templates = {};
+  for (const definition of definitions) {
+    const marker = `builtin:generic-demo:${definition.key}:v1`;
+    const existing = store.listWorkbooks().find((book) => book.description === marker);
+    if (existing) {
+      templates[definition.key] = store.getPublishedWorkbook(existing.id);
+      if (!templates[definition.key]) throw new Error('已有内置示例尚未发布；为保护修改内容，启动过程不会自动覆盖');
+      continue;
+    }
+    const book = store.createWorkbook({ name: definition.name, description: marker, snapshot: definition.snapshot, userId: admin.id });
+    store.saveDesign({ id: book.id, templateConfig: { businessModel: definition.model }, dataSourceConfig: { type: 'static', name: '完全合成数据' }, userId: admin.id, expectedVersion: 1 });
+    store.publishWorkbook({ id: book.id, userId: admin.id, expectedVersion: 2 });
+    templates[definition.key] = store.getPublishedWorkbook(book.id);
+  }
+  const templateIds = Object.values(templates).map((item) => item.id);
+  for (const actor of store.listUsers().filter((user) => ['admin', 'editor'].includes(user.role))) {
+    const ensure = async (key, values, details = {}) => {
+      const release = templates[key];
+      const existing = await records.list({ spaceId: 'generic_relation_demo', entityId: key, templateId: release.id, templateIds, actor: { ...actor, role: 'editor' } });
+      if (existing.length) return existing[0];
+      return (await records.save({ release, actor, templateAllowed: () => true, requestId: randomUUID(), input: { entityId: key, values, details } })).record;
+    };
+    const contact = await ensure('contact', { name: '合成联系人 A', contact: '示例联系方式', status_note: null });
+    const item = await ensure('catalog_item', { name: '合成目录条目 A', code: 'ITEM-01', reference_value: '12.50' });
+    await ensure('request', { number: `DEMO-${actor.username}`, date: '2026-09-16', contact_id: contact.id, contact_snapshot: null, total_quantity: null }, { items: [{ entityId: 'request_item', values: { catalog_item_id: item.id, quantity: 2, confirmed_value: null } }] });
+  }
+  return templates;
 }

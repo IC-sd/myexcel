@@ -6,6 +6,7 @@ import { importXlsxWorkbook, snapshotToXlsx } from './workbook-codec.mjs';
 import { createSyntheticWorkbookBenchmark } from './benchmark.mjs';
 import { extractBusinessRecord, validateBusinessModel } from '../shared/business-model.mjs';
 import { BusinessRecords } from './business/records.mjs';
+import { LocalBusinessRecords } from './business/local-records.mjs';
 import { handleRuntime } from './business/runtime-api.mjs';
 
 const MIME = {
@@ -84,9 +85,9 @@ function serveStatic(staticDirectory, pathname, response) {
   return true;
 }
 
-export function createApplication({ databasePath, staticDirectory = null, businessPool = null }) {
+export function createApplication({ databasePath, staticDirectory = null, businessPool = null, businessRecords = null }) {
   const store = new Store(databasePath);
-  const records = businessPool ? new BusinessRecords(businessPool) : null;
+  const records = businessRecords || (businessPool ? new BusinessRecords(businessPool) : new LocalBusinessRecords(`${databasePath}.records.json`));
 
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');

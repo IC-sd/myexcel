@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApplication } from './app.mjs';
 import { createBusinessPool, mysqlConfig } from './business/mysql.mjs';
+import { seedDemo } from './business/demo.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDirectory = process.env.MYEXCEL_DATA_DIR ? resolve(process.env.MYEXCEL_DATA_DIR) : join(root, 'data');
@@ -17,8 +18,10 @@ if (businessPool) {
   catch (error) { await businessPool.end(); throw new Error(`MySQL 业务库不可用或未迁移（${error.code || 'unknown'}）；请先检查配置并执行 migrate-business.mjs`); }
 }
 const app = createApplication({ databasePath: join(dataDirectory, 'myexcel.db'), staticDirectory, businessPool });
+if (process.env.MYEXCEL_SEED_DEMO !== '0') await seedDemo(app);
 app.server.listen(port, host, () => {
   console.log(`Sheet application API running at http://${host}:${port}`);
+  console.log(`Business records storage: ${app.records.storage}`);
   if (!staticDirectory) console.log('未检测到 dist；开发前端请运行 npm run dev:web');
 });
 
