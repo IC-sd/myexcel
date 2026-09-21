@@ -13,7 +13,8 @@
     "build": "vite build",
     "start": "node server/index.mjs",
     "test": "node --test",
-    "check": "npm run test && npm run build"
+    "check": "npm run test && npm run build",
+    "benchmark": "npm run build && node scripts/benchmark-stage3.mjs"
   },
   "dependencies": {
     "@univerjs/presets": "0.15.5",
