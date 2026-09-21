@@ -12,6 +12,7 @@ const props = defineProps({ user: { type: Object, required: true } });
 const emit = defineEmits(['logout']);
 const sheetContainer = ref(null);
 const fileInput = ref(null);
+const packageInput = ref(null);
 const workbooks = ref([]);
 const active = ref(null);
 const busy = ref(false);
@@ -344,9 +345,34 @@ async function importFile(event) {
   }
 }
 
+async function importPackage(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file || !mayLeaveCurrent()) return;
+  busy.value = true;
+  notify(`正在校验并导入 ${file.name}…`);
+  try {
+    const result = await api.importTemplatePackage(file);
+    await refreshList(false);
+    viewMode.value = 'workbook';
+    await openWorkbook(result.workbook.id, true, result.workbook);
+    const summary = result.report?.summary;
+    notify(`模板包已导入为独立草稿${summary ? `：${summary.sheets} 个工作表，${summary.formulas} 个公式` : ''}`, 'success');
+  } catch (error) {
+    notify(error.payload?.issues?.[0]?.message || error.message, 'error');
+  } finally {
+    busy.value = false;
+  }
+}
+
 function exportWorkbook() {
   if (!active.value) return;
     window.location.href = api.exportUrl(active.value.id, viewMode.value === 'published');
+}
+
+function exportPackage() {
+  if (!active.value) return;
+  window.location.href = api.templatePackageUrl(active.value.id, viewMode.value === 'published');
 }
 
 async function openVersions() {
@@ -403,9 +429,11 @@ async function openVersions() {
         <div class="toolbar-actions">
           <template v-if="viewMode === 'published'"><span class="published-badge">已发布固定版本 v{{ published?.publishedVersion }}</span><button v-if="canDesign" class="secondary-button" @click="switchMode('designer')">返回管理设计端</button></template>
           <template v-else><input v-if="canEdit" ref="fileInput" class="visually-hidden" type="file" accept=".xlsx" @change="importFile" />
+          <input v-if="canEdit" ref="packageInput" class="visually-hidden" type="file" accept=".mxapp.json,application/json" @change="importPackage" />
           <button v-if="viewMode === 'template' && canDesign" class="secondary-button" :disabled="busy || !active" @click="captureBindingSelection">绑定当前选区</button>
           <button v-if="canEdit" class="secondary-button" :disabled="busy" @click="fileInput.click()">导入 XLSX</button>
           <button class="secondary-button" :disabled="!active" @click="exportWorkbook">导出 XLSX</button>
+          <details class="toolbar-menu"><summary class="secondary-button">模板包</summary><div><button v-if="canEdit" :disabled="busy" @click="packageInput.click()">导入模板包</button><button :disabled="!active" @click="exportPackage">导出模板包</button><small>只迁移模板、模型和规则，不包含业务记录与权限。</small></div></details>
           <button v-if="active?.templateConfig?.compatibilityReport" class="secondary-button" :disabled="!active" @click="showCompatibility = true">兼容性报告</button><button class="secondary-button" :disabled="!active" @click="openVersions">版本记录</button>
           <button v-if="canEdit" class="primary-button" :disabled="busy || !active" @click="saveWorkbook">{{ busy ? '处理中…' : '保存工作簿' }}</button></template>
         </div>

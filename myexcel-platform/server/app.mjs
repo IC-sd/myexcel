@@ -8,6 +8,8 @@ import { extractBusinessRecord, validateBusinessModel } from '../shared/business
 import { BusinessRecords } from './business/records.mjs';
 import { LocalBusinessRecords } from './business/local-records.mjs';
 import { handleRuntime } from './business/runtime-api.mjs';
+import { createTemplatePackage, importTemplatePackage, TEMPLATE_PACKAGE_VERSION, validateTemplatePackage } from './template-package.mjs';
+import { openApiV1 } from './openapi.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -44,8 +46,8 @@ async function readBody(request, limit = 30 * 1024 * 1024) {
   return Buffer.concat(chunks);
 }
 
-async function readJson(request) {
-  const body = await readBody(request, 2 * 1024 * 1024);
+async function readJson(request, limit = 2 * 1024 * 1024) {
+  const body = await readBody(request, limit);
   if (!body.length) return {};
   let parsed;
   try {
@@ -95,7 +97,41 @@ export function createApplication({ databasePath, staticDirectory = null, busine
 
     try {
       if (path === '/api/health' && request.method === 'GET') return json(response, 200, { ok: true, service: 'generic-sheet-app-builder' });
+      if (path === '/api/v1' && request.method === 'GET') return json(response, 200, { name: 'generic-sheet-app-builder', apiVersion: 'v1', templatePackageVersion: TEMPLATE_PACKAGE_VERSION, documentation: '/api/v1/openapi.json' });
+      if (path === '/api/v1/openapi.json' && request.method === 'GET') return json(response, 200, openApiV1);
+      if (path.startsWith('/api/v1/apps/')) {
+        const runtimePath = path.replace(/^\/api\/v1\/apps\//, '/api/runtime/');
+        return await handleRuntime({ path: runtimePath, url: new URL(`${runtimePath}${url.search}`, 'http://127.0.0.1'), request, response, store, records, json, readJson, requireUser });
+      }
       if (path.startsWith('/api/runtime/')) return await handleRuntime({ path, url, request, response, store, records, json, readJson, requireUser });
+
+      if (path === '/api/v1/template-packages/validate' && request.method === 'POST') {
+        const user = requireUser(store, request, response, 'editor');
+        if (!user) return;
+        const report = validateTemplatePackage(await readJson(request, 10 * 1024 * 1024));
+        return json(response, report.valid ? 200 : 422, report.valid ? { report } : { error: '模板包兼容性校验未通过', issues: report.issues, report });
+      }
+
+      if (path === '/api/v1/template-packages' && request.method === 'POST') {
+        const user = requireUser(store, request, response, 'editor');
+        if (!user) return;
+        const imported = importTemplatePackage(await readJson(request, 10 * 1024 * 1024));
+        const workbook = store.createWorkbook({ ...imported, userId: user.id });
+        return json(response, 201, { workbook, report: imported.report });
+      }
+
+      const packageMatch = path.match(/^\/api\/v1\/templates\/([^/]+)\/package$/);
+      if (packageMatch && request.method === 'GET') {
+        const user = requireUser(store, request, response);
+        if (!user) return;
+        if (!store.hasWorkbookAccess(user, packageMatch[1], 'view')) return json(response, 403, { error: '没有此模板包的导出权限' });
+        const workbook = url.searchParams.get('published') === '1' || !store.hasWorkbookAccess(user, packageMatch[1], 'edit')
+          ? store.getPublishedWorkbook(packageMatch[1]) : store.getWorkbook(packageMatch[1]);
+        if (!workbook) return json(response, 404, { error: '模板不存在或尚未发布' });
+        const payload = createTemplatePackage(workbook);
+        const encodedName = encodeURIComponent(`${workbook.name}.mxapp.json`);
+        return json(response, 200, payload, { 'Content-Disposition': `attachment; filename*=UTF-8''${encodedName}` });
+      }
 
       if (path === '/api/auth/login' && request.method === 'POST') {
         const { username, password } = await readJson(request);

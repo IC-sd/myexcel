@@ -202,7 +202,7 @@ export class Store {
     };
   }
 
-  createWorkbook({ name, description = '', snapshot, templateConfig = {}, userId }) {
+  createWorkbook({ name, description = '', snapshot, templateConfig = {}, dataSourceConfig = {}, userId }) {
     const id = crypto.randomUUID();
     const createdAt = now();
     const workbookSnapshot = snapshot ?? createDefaultSnapshot(name);
@@ -211,9 +211,9 @@ export class Store {
     this.db.exec('BEGIN IMMEDIATE');
     try {
       this.db.prepare(`
-        INSERT INTO workbooks (id, name, description, snapshot, template_config, version, created_by, updated_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-      `).run(id, name, description, encoded, JSON.stringify(templateConfig), userId, userId, createdAt, createdAt);
+        INSERT INTO workbooks (id, name, description, snapshot, template_config, data_source_config, version, created_by, updated_by, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+      `).run(id, name, description, encoded, JSON.stringify(templateConfig), JSON.stringify(dataSourceConfig), userId, userId, createdAt, createdAt);
       this.db.prepare('INSERT INTO workbook_versions (workbook_id, version, snapshot, saved_by, saved_at) VALUES (?, 1, ?, ?, ?)')
         .run(id, encoded, userId, createdAt);
       this.db.prepare('INSERT OR REPLACE INTO workbook_permissions (workbook_id, user_id, access_level) VALUES (?, ?, ?)')

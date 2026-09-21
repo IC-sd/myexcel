@@ -20,18 +20,18 @@ async function request(path, options = {}) {
 
 export const api = {
   runtimeStatus: () => request('/api/runtime/status'),
-  runtimeSchema: (id) => request(`/api/runtime/${id}/schema`),
+  runtimeSchema: (id) => request(`/api/v1/apps/${id}/schema`),
   listRecords: (id, offset = 0, filters = {}) => {
     const query = new URLSearchParams({ limit: '30', offset: String(offset) });
     for (const key of ['dateFieldId', 'dateFrom', 'dateTo', 'workflowState']) if (filters[key]) query.set(key, filters[key]);
-    return request(`/api/runtime/${id}/records?${query}`);
+    return request(`/api/v1/apps/${id}/records?${query}`);
   },
-  getRecord: (id, recordId) => request(`/api/runtime/${id}/records/${recordId}`),
-  getRecordAudit: (id, recordId) => request(`/api/runtime/${id}/records/${recordId}/audit`),
-  saveRecord: (id, recordId, data) => request(`/api/runtime/${id}/records${recordId ? `/${recordId}` : ''}`, { method: recordId ? 'PUT' : 'POST', body: JSON.stringify(data) }),
-  referenceRecords: (id, entityId, offset = 0) => request(`/api/runtime/${id}/references/${entityId}?limit=30&offset=${offset}`),
-  runtimeSummary: (id) => request(`/api/runtime/${id}/summary`),
-  transitionRecord: (id, recordId, data) => request(`/api/runtime/${id}/records/${recordId}/workflow`, { method: 'POST', body: JSON.stringify(data) }),
+  getRecord: (id, recordId) => request(`/api/v1/apps/${id}/records/${recordId}`),
+  getRecordAudit: (id, recordId) => request(`/api/v1/apps/${id}/records/${recordId}/audit`),
+  saveRecord: (id, recordId, data) => request(`/api/v1/apps/${id}/records${recordId ? `/${recordId}` : ''}`, { method: recordId ? 'PUT' : 'POST', body: JSON.stringify(data) }),
+  referenceRecords: (id, entityId, offset = 0) => request(`/api/v1/apps/${id}/references/${entityId}?limit=30&offset=${offset}`),
+  runtimeSummary: (id) => request(`/api/v1/apps/${id}/summary`),
+  transitionRecord: (id, recordId, data) => request(`/api/v1/apps/${id}/records/${recordId}/workflow`, { method: 'POST', body: JSON.stringify(data) }),
   recordExportUrl: (id, recordId) => `/api/runtime/${id}/records/${recordId}/export`,
   me: () => request('/api/auth/me'),
   login: (username, password) => request('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
@@ -57,4 +57,6 @@ export const api = {
     headers: { 'Content-Type': file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'X-File-Name': encodeURIComponent(file.name) },
   }),
   exportUrl: (id, published = false) => `/api/workbooks/${id}/export${published ? '?published=1' : ''}`,
+  importTemplatePackage: async (file) => request('/api/v1/template-packages', { method: 'POST', body: await file.text() }),
+  templatePackageUrl: (id, published = false) => `/api/v1/templates/${id}/package${published ? '?published=1' : ''}`,
 };
