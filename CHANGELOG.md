@@ -21,6 +21,11 @@ First public preview of the generic spreadsheet application builder.
 - Production build with Node.js 24.
 - Clean local startup, seeded demo listing, saved-record reopen and validation in a real browser.
 
+### Fixed
+
+- Shared synthetic directory records are seeded once, so relation pickers and grouped summaries no longer show duplicate labels for different demo users.
+- The runtime header now states that administrators can see all records instead of incorrectly describing an owner-only view.
+
 ### Known limitations
 
 - XLSX support intentionally covers a documented subset rather than every Excel feature.

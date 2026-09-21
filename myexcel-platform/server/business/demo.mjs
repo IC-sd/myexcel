@@ -23,7 +23,7 @@ export function demoDefinitions() {
         { id: 'return', label: '退回', from: 'submitted', to: 'returned', roles: ['admin'] },
       ] },
     } : { lookups: [], calculations: [], aggregates: [] };
-    const model = { schemaVersion: 1, dataSpaceId: 'generic_relation_demo', entities: structuredClone(entities), document: { entityId: entity.id,
+    const model = { schemaVersion: 1, dataSpaceId: 'generic_relation_demo', recordScope: entity.id === 'request' ? 'own' : 'all', entities: structuredClone(entities), document: { entityId: entity.id,
       fields: entity.fields.map((field, index) => ({ fieldId: field.id, sheetId: 'form', cell: `B${index + 3}` })), details }, rules };
     const cells = { 0: { 0: { v: `${entity.label}（完全合成）` } }, 1: { 0: { v: '模板仅负责版式，填写内容独立保存在记录存储中' } } };
     entity.fields.forEach((field, index) => { cells[index + 2] = { 0: { v: field.label } }; });
@@ -50,16 +50,16 @@ export async function seedDemo({ store, records }) {
     templates[definition.key] = store.getPublishedWorkbook(book.id);
   }
   const templateIds = Object.values(templates).map((item) => item.id);
+  const ensure = async (key, actor, values, details = {}) => {
+    const release = templates[key];
+    const existing = await records.list({ spaceId: 'generic_relation_demo', entityId: key, templateId: release.id, templateIds, actor: { ...actor, role: 'editor' } });
+    if (existing.length) return existing[0];
+    return (await records.save({ release, actor, templateAllowed: () => true, requestId: randomUUID(), input: { entityId: key, values, details } })).record;
+  };
+  const contact = await ensure('contact', admin, { name: '合成联系人 A', contact: '示例联系方式', status_note: null });
+  const item = await ensure('catalog_item', admin, { name: '合成目录条目 A', code: 'ITEM-01', reference_value: '12.50' });
   for (const actor of store.listUsers().filter((user) => ['admin', 'editor'].includes(user.role))) {
-    const ensure = async (key, values, details = {}) => {
-      const release = templates[key];
-      const existing = await records.list({ spaceId: 'generic_relation_demo', entityId: key, templateId: release.id, templateIds, actor: { ...actor, role: 'editor' } });
-      if (existing.length) return existing[0];
-      return (await records.save({ release, actor, templateAllowed: () => true, requestId: randomUUID(), input: { entityId: key, values, details } })).record;
-    };
-    const contact = await ensure('contact', { name: '合成联系人 A', contact: '示例联系方式', status_note: null });
-    const item = await ensure('catalog_item', { name: '合成目录条目 A', code: 'ITEM-01', reference_value: '12.50' });
-    await ensure('request', { number: `DEMO-${actor.username}`, date: '2026-09-16', contact_id: contact.id, contact_snapshot: null, total_quantity: null }, { items: [{ entityId: 'request_item', values: { catalog_item_id: item.id, quantity: 2, confirmed_value: null } }] });
+    await ensure('request', actor, { number: `DEMO-${actor.username}`, date: '2026-09-16', contact_id: contact.id, contact_snapshot: null, total_quantity: null }, { items: [{ entityId: 'request_item', values: { catalog_item_id: item.id, quantity: 2, confirmed_value: null } }] });
   }
   return templates;
 }

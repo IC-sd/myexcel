@@ -151,6 +151,16 @@ test('viewer opens the historical grid in viewer mode and cannot save', async (t
   assert.equal(view.state.dirty, false);
 });
 
+test('administrator scope message matches server-side all-record access', async (t) => {
+  installWindow(t);
+  const { model, snapshot } = orderFixture();
+  const grid = gridHarness();
+  const api = { runtimeSchema: async () => ({ ...schema(model, snapshot), role: 'admin' }), listRecords: async () => ({ records: [] }) };
+  const view = await mountLogic('BusinessRecords', { props: { workbookId: 'book' }, api, univerAPI: grid.api });
+  t.after(() => view.close());
+  assert.equal(view.state.scopeMessage, '系统管理员可查看全部记录。');
+});
+
 test('role field policies block read cells in the browser grid', async (t) => {
   installWindow(t);
   const { model, snapshot } = orderFixture();

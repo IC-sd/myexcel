@@ -58,10 +58,18 @@ test('fresh local mode seeds a reproducible three-template demo once', async () 
     assert.equal(demos.length, 3);
     assert.ok(demos.every((book) => book.status === 'published'));
     const admin = store.listUsers().find((user) => user.role === 'admin');
-    const request = demos.map((book) => store.getPublishedWorkbook(book.id)).find((book) => book.templateConfig.businessModel.document.entityId === 'request');
+    const releases = demos.map((book) => store.getPublishedWorkbook(book.id));
+    const request = releases.find((book) => book.templateConfig.businessModel.document.entityId === 'request');
     const rows = await records.list({ spaceId: 'generic_relation_demo', entityId: 'request', templateId: request.id, templateIds: demos.map((book) => book.id), actor: admin });
     assert.equal(rows.length, 2);
     assert.ok(rows.every((row) => row.values.contact_snapshot === '示例联系方式' && row.values.total_quantity === 2));
+    assert.equal(new Set(rows.map((row) => row.values.contact_id)).size, 1);
+    assert.equal(new Set(rows.flatMap((row) => row.details.items.map((item) => item.values.catalog_item_id))).size, 1);
+    for (const entityId of ['contact', 'catalog_item']) {
+      const release = releases.find((book) => book.templateConfig.businessModel.document.entityId === entityId);
+      const shared = await records.list({ spaceId: 'generic_relation_demo', entityId, templateId: release.id, templateIds: demos.map((book) => book.id), actor: admin });
+      assert.equal(shared.length, 1);
+    }
   } finally {
     store.close();
     rmSync(directory, { recursive: true, force: true });

@@ -30,9 +30,11 @@ const dateFilterFields = computed(() => {
   return (model.value?.document.fields || []).map((binding) => ({ binding, field: entity?.fields.find((field) => field.id === binding.fieldId) }))
     .filter((item) => item.field?.type === 'date' && fieldState(model.value, model.value.document.entityId, item.field.id, role.value) !== 'hidden');
 });
-const scopeMessage = computed(() => permission.value
-  ? (scope.value === 'all' ? '本应用记录在编辑者之间共享。' : '当前只显示本人创建的记录。')
-  : (scope.value === 'all' ? '当前为只读访问，可查看此应用的共享记录。' : '当前为只读访问，且此应用按创建人隔离记录。'));
+const scopeMessage = computed(() => role.value === 'admin'
+  ? '系统管理员可查看全部记录。'
+  : permission.value
+    ? (scope.value === 'all' ? '本应用记录在编辑者之间共享。' : '当前只显示本人创建的记录。')
+    : (scope.value === 'all' ? '当前为只读访问，可查看此应用的共享记录。' : '当前为只读访问，且此应用按创建人隔离记录。'));
 const emptyListMessage = computed(() => !permission.value && scope.value === 'own'
   ? '只读账号没有可查看的自有记录'
   : '此页暂无有权访问的记录');
