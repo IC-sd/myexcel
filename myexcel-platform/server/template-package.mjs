@@ -13,13 +13,32 @@ function validateSnapshot(snapshot) {
   if (!snapshot.sheets || typeof snapshot.sheets !== 'object' || Array.isArray(snapshot.sheets)) issues.push(issue('template.snapshot.sheets', '工作簿至少需要一个工作表'));
   const sheetIds = Object.keys(snapshot.sheets || {});
   if (!sheetIds.length) issues.push(issue('template.snapshot.sheets', '工作簿至少需要一个工作表'));
-  if (!Array.isArray(snapshot.sheetOrder) || snapshot.sheetOrder.some((id) => !sheetIds.includes(id))) issues.push(issue('template.snapshot.sheetOrder', '工作表顺序包含不存在的工作表'));
+  if (sheetIds.length > 32) issues.push(issue('template.snapshot.sheets', '模板包最多包含 32 个工作表'));
+  if (!Array.isArray(snapshot.sheetOrder) || snapshot.sheetOrder.length !== sheetIds.length || new Set(snapshot.sheetOrder).size !== sheetIds.length || snapshot.sheetOrder.some((id) => !sheetIds.includes(id))) issues.push(issue('template.snapshot.sheetOrder', '工作表顺序必须完整且不能重复'));
+  let cellCount = 0;
   for (const id of sheetIds) {
     const sheet = snapshot.sheets[id];
-    if (!sheet || sheet.id !== id || typeof sheet.name !== 'string' || !sheet.name.trim()) issues.push(issue(`template.snapshot.sheets.${id}`, '工作表标识或名称无效'));
-    if (!Number.isInteger(sheet?.rowCount) || sheet.rowCount < 1 || !Number.isInteger(sheet?.columnCount) || sheet.columnCount < 1) issues.push(issue(`template.snapshot.sheets.${id}`, '工作表行列数无效'));
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(id) || !sheet || sheet.id !== id || typeof sheet.name !== 'string' || !sheet.name.trim() || sheet.name.length > 100) issues.push(issue(`template.snapshot.sheets.${id}`, '工作表标识或名称无效'));
+    if (!Number.isInteger(sheet?.rowCount) || sheet.rowCount < 1 || sheet.rowCount > 1048576 || !Number.isInteger(sheet?.columnCount) || sheet.columnCount < 1 || sheet.columnCount > 16384) issues.push(issue(`template.snapshot.sheets.${id}`, '工作表行列数超出支持范围'));
+    if (sheet?.cellData !== undefined && (!sheet.cellData || typeof sheet.cellData !== 'object' || Array.isArray(sheet.cellData))) { issues.push(issue(`template.snapshot.sheets.${id}.cellData`, '单元格数据必须是对象')); continue; }
+    for (const [rowKey, columns] of Object.entries(sheet?.cellData || {})) {
+      const row = Number(rowKey);
+      if (!Number.isInteger(row) || row < 0 || row >= sheet.rowCount || !columns || typeof columns !== 'object' || Array.isArray(columns)) { issues.push(issue(`template.snapshot.sheets.${id}.cellData.${rowKey}`, '单元格行坐标或内容无效')); if (issues.length >= 100) return issues; continue; }
+      for (const [columnKey, cell] of Object.entries(columns)) {
+        const column = Number(columnKey);
+        cellCount += 1;
+        if (!Number.isInteger(column) || column < 0 || column >= sheet.columnCount || !cell || typeof cell !== 'object' || Array.isArray(cell)) issues.push(issue(`template.snapshot.sheets.${id}.cellData.${rowKey}.${columnKey}`, '单元格列坐标或内容无效'));
+        if (issues.length >= 100) return issues;
+        if (cellCount > 250000) { issues.push(issue('template.snapshot.sheets', '模板包最多包含 250,000 个已存储单元格')); return issues; }
+      }
+    }
   }
   return issues;
+}
+
+function portableDataSource(config) {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return {};
+  return Object.fromEntries(['type', 'name'].flatMap((key) => typeof config[key] === 'string' ? [[key, config[key].slice(0, 200)]] : []));
 }
 
 export function validateTemplatePackage(input) {
@@ -62,7 +81,7 @@ export function createTemplatePackage(workbook) {
     template: {
       snapshot: clone(workbook.snapshot),
       templateConfig: clone(workbook.templateConfig || {}),
-      dataSourceConfig: clone(workbook.dataSourceConfig || {}),
+      dataSourceConfig: portableDataSource(workbook.dataSourceConfig),
     },
   };
   const validation = validateTemplatePackage(payload);
@@ -82,7 +101,7 @@ export function importTemplatePackage(input) {
     description: value.application.description || '',
     snapshot,
     templateConfig: clone(value.template.templateConfig || {}),
-    dataSourceConfig: clone(value.template.dataSourceConfig || {}),
+    dataSourceConfig: portableDataSource(value.template.dataSourceConfig),
     report: validation,
   };
 }

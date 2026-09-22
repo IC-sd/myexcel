@@ -23,12 +23,14 @@ async function application() {
 
 test('template package is versioned, contains only reusable design, and receives a new workbook identity', () => {
   const { model, snapshot } = orderFixture();
-  const source = { id: 'private-id', name: '通用订单模板', description: '合成模板', snapshot, templateConfig: { businessModel: model }, dataSourceConfig: { type: 'static' }, createdAt: 'private', updatedAt: 'private' };
+  const source = { id: 'private-id', name: '通用订单模板', description: '合成模板', snapshot, templateConfig: { businessModel: model }, dataSourceConfig: { type: 'static', name: '合成来源', connection: 'PRIVATE_CONNECTION', password: 'PRIVATE_PASSWORD' }, createdAt: 'private', updatedAt: 'private' };
   const payload = createTemplatePackage(source);
   assert.equal(payload.format, 'myexcel-template-package');
   assert.equal(payload.version, 1);
   assert.equal(payload.id, undefined);
   assert.equal(JSON.stringify(payload).includes('private-id'), false);
+  assert.deepEqual(payload.template.dataSourceConfig, { type: 'static', name: '合成来源' });
+  assert.equal(JSON.stringify(payload).includes('PRIVATE_'), false);
   assert.equal(validateTemplatePackage(payload).valid, true);
   const imported = importTemplatePackage(payload);
   assert.notEqual(imported.snapshot.id, snapshot.id);
@@ -45,6 +47,17 @@ test('template package rejects unsupported versions and invalid business binding
   assert.equal(report.valid, false);
   assert.ok(report.issues.some((item) => item.path === 'version'));
   assert.ok(report.issues.some((item) => item.path.includes('businessModel')));
+});
+
+test('template package rejects unsafe workbook dimensions and stored cell coordinates', () => {
+  const { model, snapshot } = orderFixture();
+  const payload = createTemplatePackage({ name: '示例', description: '', snapshot, templateConfig: { businessModel: model }, dataSourceConfig: {} });
+  payload.template.snapshot.sheets.form.rowCount = 2000000;
+  payload.template.snapshot.sheets.form.cellData[9999999] = { 0: { v: '越界' } };
+  const report = validateTemplatePackage(payload);
+  assert.equal(report.valid, false);
+  assert.ok(report.issues.some((item) => item.message.includes('超出支持范围')));
+  assert.ok(report.issues.some((item) => item.message.includes('行坐标')));
 });
 
 test('template package migrates between two clean instances without records or permissions', async () => {

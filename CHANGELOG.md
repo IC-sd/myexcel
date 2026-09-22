@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Versioned `/api/v1` HTTP/JSON runtime contract and OpenAPI 3.1 document.
+- Portable `.mxapp.json` template packages with validation and clean-instance migration.
+- Browser import/export entry for design-only template packages.
+- Reproducible lazy-loading bundle budgets and synthetic 100/1,000/10,000-row benchmark.
+
+### Security
+
+- Template packages intentionally exclude users, sessions, permission overrides, business records, audit history, storage files, and environment secrets.
+
 ## [0.2.0] - 2026-09-19
 
 First public preview of the generic spreadsheet application builder.

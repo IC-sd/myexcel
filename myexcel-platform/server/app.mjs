@@ -97,7 +97,7 @@ export function createApplication({ databasePath, staticDirectory = null, busine
 
     try {
       if (path === '/api/health' && request.method === 'GET') return json(response, 200, { ok: true, service: 'generic-sheet-app-builder' });
-      if (path === '/api/v1' && request.method === 'GET') return json(response, 200, { name: 'generic-sheet-app-builder', apiVersion: 'v1', templatePackageVersion: TEMPLATE_PACKAGE_VERSION, documentation: '/api/v1/openapi.json' });
+      if ((path === '/api/v1' || path === '/api/v1/') && request.method === 'GET') return json(response, 200, { name: 'generic-sheet-app-builder', apiVersion: 'v1', templatePackageVersion: TEMPLATE_PACKAGE_VERSION, documentation: '/api/v1/openapi.json' });
       if (path === '/api/v1/openapi.json' && request.method === 'GET') return json(response, 200, openApiV1);
       if (path.startsWith('/api/v1/apps/')) {
         const runtimePath = path.replace(/^\/api\/v1\/apps\//, '/api/runtime/');

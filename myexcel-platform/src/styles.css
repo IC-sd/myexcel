@@ -85,6 +85,7 @@ select option:checked { color: #174f82; background: #e7f2fd; }
 .title-block h1 { display: flex; align-items: center; gap: 8px; margin: 5px 0 0; font-size: 20px; }
 .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: #e99a2d; }
 .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+.toolbar-actions > button, .toolbar-menu > summary { flex: none; white-space: nowrap; }
 .toolbar-menu { position: relative; }
 .toolbar-menu > summary { list-style: none; cursor: pointer; user-select: none; }
 .toolbar-menu > summary::-webkit-details-marker { display: none; }
@@ -92,6 +93,7 @@ select option:checked { color: #174f82; background: #e7f2fd; }
 .toolbar-menu > div { position: absolute; top: calc(100% + 7px); right: 0; z-index: 30; width: 230px; display: grid; gap: 4px; padding: 8px; border: 1px solid #d4deea; border-radius: 9px; background: white; box-shadow: 0 12px 32px rgba(24,49,83,.16); }
 .toolbar-menu > div button { padding: 9px 10px; color: #33445c; background: transparent; border: 0; border-radius: 6px; text-align: left; font-weight: 650; }
 .toolbar-menu > div button:hover { background: #eef5fc; }
+.toolbar-menu > div > span { height: 1px; margin: 3px 6px; background: #edf1f5; }
 .toolbar-menu > div small { padding: 7px 10px 4px; color: var(--muted); border-top: 1px solid #edf1f5; line-height: 1.45; }
 .published-badge, .status-pill { padding: 7px 11px; border-radius: 99px; color: #176a49; background: #e7f6ef; font-size: 12px; font-weight: 800; }
 .sheet-frame { min-width: 0; min-height: 0; position: relative; overflow: hidden; border: 1px solid #ced9e6; border-radius: 10px 10px 0 0; background: white; box-shadow: 0 8px 22px rgba(27, 49, 75, 0.07); }

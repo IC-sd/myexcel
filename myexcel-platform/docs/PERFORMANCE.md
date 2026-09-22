@@ -12,15 +12,15 @@ The command creates a production build, verifies that the spreadsheet workspace 
 
 ## Recorded baseline
 
-Recorded on 2026-09-21 with Node.js 24.19.0, Windows x64:
+Recorded on 2026-09-22 with Node.js 24.19.0, Windows x64:
 
 | Measurement | Result | Budget |
 |---|---:|---:|
-| Login entry JavaScript, gzip | 29,493 bytes | 81,920 bytes |
-| Lazy workspace JavaScript, gzip | 2,685,938 bytes | 3,145,728 bytes |
-| 100 rows × 26 columns, generate / serialize | 0.29 / 0.10 ms | — |
-| 1,000 rows × 200 columns, generate / serialize | 2.13 / 1.14 ms | — |
-| 10,000 rows × 200 columns, generate / serialize | 22.51 / 11.04 ms | 1,000 / 1,000 ms |
+| Login entry JavaScript, gzip | 29,492 bytes | 81,920 bytes |
+| Lazy workspace JavaScript, gzip | 2,685,966 bytes | 3,145,728 bytes |
+| 100 rows × 26 columns, generate / serialize | 0.42 / 0.17 ms | — |
+| 1,000 rows × 200 columns, generate / serialize | 2.52 / 1.46 ms | — |
+| 10,000 rows × 200 columns, generate / serialize | 24.73 / 14.79 ms | 1,000 / 1,000 ms |
 
 The 10,000-row snapshot is about 1.66 MB as JSON. Only eight data columns are populated; `200 columns` verifies the declared wide-sheet boundary rather than pretending to be a dense two-million-cell workload.
 
