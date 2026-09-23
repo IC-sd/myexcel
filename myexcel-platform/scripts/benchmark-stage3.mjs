@@ -1,6 +1,6 @@
 import { gzipSync } from 'node:zlib';
 import { readFileSync, readdirSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { createSyntheticWorkbookBenchmark } from '../server/benchmark.mjs';
 

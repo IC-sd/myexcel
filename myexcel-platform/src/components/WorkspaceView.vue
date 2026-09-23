@@ -13,6 +13,7 @@ const emit = defineEmits(['logout']);
 const sheetContainer = ref(null);
 const fileInput = ref(null);
 const packageInput = ref(null);
+const ioMenu = ref(null);
 const workbooks = ref([]);
 const active = ref(null);
 const busy = ref(false);
@@ -325,6 +326,7 @@ async function createWorkbook() {
 }
 
 async function importFile(event) {
+  if (ioMenu.value) ioMenu.value.open = false;
   const file = event.target.files?.[0];
   event.target.value = '';
   if (!file) return;
@@ -346,6 +348,7 @@ async function importFile(event) {
 }
 
 async function importPackage(event) {
+  if (ioMenu.value) ioMenu.value.open = false;
   const file = event.target.files?.[0];
   event.target.value = '';
   if (!file || !mayLeaveCurrent()) return;
@@ -354,8 +357,16 @@ async function importPackage(event) {
   try {
     const result = await api.importTemplatePackage(file);
     await refreshList(false);
-    viewMode.value = 'workbook';
-    await openWorkbook(result.workbook.id, true, result.workbook);
+    if (result.workbook.templateConfig?.businessModel) {
+      disposeCurrentWorkbook();
+      active.value = result.workbook;
+      dirty.value = false;
+      viewMode.value = 'designer';
+      await resetMainScroll();
+    } else {
+      viewMode.value = 'workbook';
+      await openWorkbook(result.workbook.id, true, result.workbook);
+    }
     const summary = result.report?.summary;
     notify(`模板包已导入为独立草稿${summary ? `：${summary.sheets} 个工作表，${summary.formulas} 个公式` : ''}`, 'success');
   } catch (error) {
@@ -367,11 +378,13 @@ async function importPackage(event) {
 
 function exportWorkbook() {
   if (!active.value) return;
-    window.location.href = api.exportUrl(active.value.id, viewMode.value === 'published');
+  if (ioMenu.value) ioMenu.value.open = false;
+  window.location.href = api.exportUrl(active.value.id, viewMode.value === 'published');
 }
 
 function exportPackage() {
   if (!active.value) return;
+  if (ioMenu.value) ioMenu.value.open = false;
   window.location.href = api.templatePackageUrl(active.value.id, viewMode.value === 'published');
 }
 
@@ -431,7 +444,7 @@ async function openVersions() {
           <template v-else><input v-if="canEdit" ref="fileInput" class="visually-hidden" type="file" accept=".xlsx" @change="importFile" />
           <input v-if="canEdit" ref="packageInput" class="visually-hidden" type="file" accept=".mxapp.json,application/json" @change="importPackage" />
           <button v-if="viewMode === 'template' && canDesign" class="secondary-button" :disabled="busy || !active" @click="captureBindingSelection">绑定当前选区</button>
-          <details class="toolbar-menu"><summary class="secondary-button">导入 / 导出</summary><div><button v-if="canEdit" :disabled="busy" @click="fileInput.click()">导入 XLSX</button><button :disabled="!active" @click="exportWorkbook">导出 XLSX</button><span></span><button v-if="canEdit" :disabled="busy" @click="packageInput.click()">导入模板包</button><button :disabled="!active" @click="exportPackage">导出模板包</button><small>模板包只迁移模板、模型和规则，不包含业务记录与权限。</small></div></details>
+          <details ref="ioMenu" class="toolbar-menu"><summary class="secondary-button">导入 / 导出</summary><div><button v-if="canEdit" :disabled="busy" @click="fileInput.click()">导入 XLSX</button><button :disabled="!active" @click="exportWorkbook">导出 XLSX</button><span></span><button v-if="canEdit" :disabled="busy" @click="packageInput.click()">导入模板包</button><button :disabled="!active" @click="exportPackage">导出模板包</button><small>模板包只迁移模板、模型和规则，不包含业务记录与权限。</small></div></details>
           <button v-if="active?.templateConfig?.compatibilityReport" class="secondary-button" :disabled="!active" @click="showCompatibility = true">兼容性报告</button><button class="secondary-button" :disabled="!active" @click="openVersions">版本记录</button>
           <button v-if="canEdit" class="primary-button" :disabled="busy || !active" @click="saveWorkbook">{{ busy ? '处理中…' : '保存工作簿' }}</button></template>
         </div>

@@ -47,6 +47,23 @@ test('workspace keeps edits made while a save request is in flight marked unsave
   assert.match(view.state.message, /保存期间又有修改/);
 });
 
+test('imported business template opens in design mode before it is published', async (t) => {
+  installWindow(t); let lists = 0;
+  const imported = { id: 'imported', name: 'Imported', version: 1, status: 'draft', templateConfig: { businessModel: { schemaVersion: 1 } }, dataSourceConfig: {}, snapshot: { id: 'imported-snapshot' } };
+  const api = {
+    listWorkbooks: async () => ({ workbooks: lists++ ? [business, { ...imported, accessLevel: 'design' }] : [business] }),
+    getWorkbook: async () => ({ workbook: business }),
+    importTemplatePackage: async () => ({ workbook: imported, report: { summary: { sheets: 1, formulas: 0 } } }),
+  };
+  const univerAPI = { Event: { CommandExecuted: 'command' }, Enum: { SheetValueChangeType: {} }, createWorkbook: () => { throw new Error('draft business template must not open in runtime grid'); }, disposeUnit() {}, dispose() {} };
+  const view = await mountLogic('WorkspaceView', { props: { user: { role: 'admin', displayName: 'A' } }, api, univerAPI });
+  t.after(() => view.close());
+  await view.state.importPackage({ target: { files: [{ name: 'sample.mxapp.json', text: async () => '{}' }], value: 'selected' } });
+  assert.equal(view.state.viewMode, 'designer');
+  assert.equal(view.state.active.id, 'imported');
+  assert.match(view.state.message, /模板包已导入为独立草稿/);
+});
+
 test('designer binds the current Univer cell selection without typing an address', async (t) => {
   installWindow(t); const fixture = orderFixture(); let savedPayload;
   const book = { id: 'bound', name: 'Bound', version: 1, accessLevel: 'design', templateConfig: { businessModel: fixture.model }, dataSourceConfig: {}, snapshot: fixture.snapshot };

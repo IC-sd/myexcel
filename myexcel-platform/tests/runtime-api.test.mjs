@@ -35,6 +35,7 @@ test('runtime uses zero-dependency local records by default', async () => {
     assert.equal(contract.status, 200);
     assert.equal(contract.body.openapi, '3.1.0');
     assert.ok(contract.body.paths['/apps/{templateId}/records']);
+    assert.equal(contract.body.paths['/template-packages/validate'].post.responses['200'].content['application/json'].schema.properties.report.$ref, '#/components/schemas/PackageValidation');
     assert.deepEqual((await c.call('/api/runtime/status', cookie)).body, { configured: true, storage: 'local-json' });
     assert.equal((await c.call('/api/runtime/unknown/records', cookie)).status, 404);
     const owner = c.app.store.authenticate('admin', 'Admin123!');

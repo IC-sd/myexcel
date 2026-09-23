@@ -51,15 +51,20 @@ export function validateTemplatePackage(input) {
   if (typeof value.application?.name !== 'string' || !value.application.name.trim() || value.application.name.length > 100) issues.push(issue('application.name', '应用名称须为 1—100 个字符'));
   if (typeof value.application?.description !== 'string' || value.application.description.length > 500) issues.push(issue('application.description', '应用说明须为不超过 500 个字符的文本'));
   if (!value.template || typeof value.template !== 'object') issues.push(issue('template', '缺少模板定义'));
-  issues.push(...validateSnapshot(value.template?.snapshot));
+  const snapshotIssues = validateSnapshot(value.template?.snapshot);
+  issues.push(...snapshotIssues);
   if (value.template?.templateConfig !== undefined && (!value.template.templateConfig || typeof value.template.templateConfig !== 'object' || Array.isArray(value.template.templateConfig))) issues.push(issue('template.templateConfig', '模板配置必须是对象'));
   if (value.template?.dataSourceConfig !== undefined && (!value.template.dataSourceConfig || typeof value.template.dataSourceConfig !== 'object' || Array.isArray(value.template.dataSourceConfig))) issues.push(issue('template.dataSourceConfig', '数据源配置必须是对象'));
   const model = value.template?.templateConfig?.businessModel;
-  if (model && value.template?.snapshot) {
-    const report = validateBusinessModel(model, value.template.snapshot);
-    issues.push(...report.issues.map((item) => issue(`template.templateConfig.businessModel.${item.path}`, item.message)));
+  if (model && snapshotIssues.length === 0) {
+    try {
+      const report = validateBusinessModel(model, value.template.snapshot);
+      issues.push(...report.issues.map((item) => issue(`template.templateConfig.businessModel.${item.path}`, item.message)));
+    } catch {
+      issues.push(issue('template.templateConfig.businessModel', '业务模型结构无效'));
+    }
   }
-  const formulas = value.template?.snapshot ? inspectWorkbookFormulas(value.template.snapshot) : { formulas: [], supported: 0, unsupported: 0 };
+  const formulas = snapshotIssues.length === 0 ? inspectWorkbookFormulas(value.template.snapshot) : { formulas: [], supported: 0, unsupported: 0 };
   return {
     valid: issues.length === 0,
     issues,

@@ -15,6 +15,12 @@ All notable changes to this project are documented in this file.
 
 - Template packages intentionally exclude users, sessions, permission overrides, business records, audit history, storage files, and environment secrets.
 
+### Fixed
+
+- Malformed worksheet or business-rule payloads now return structured package validation issues instead of an internal server error.
+- Imported business templates open in design mode as unpublished drafts, avoiding an invalid jump into the published runtime.
+- The OpenAPI package-validation response now matches the actual `{ report }` envelope.
+
 ## [0.2.0] - 2026-09-19
 
 First public preview of the generic spreadsheet application builder.

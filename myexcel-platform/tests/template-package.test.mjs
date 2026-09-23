@@ -12,13 +12,16 @@ async function application() {
   const app = createApplication({ databasePath: join(directory, 'metadata.db') });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${app.server.address().port}`;
-  const loginResponse = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'admin', password: 'Admin123!' }) });
-  const cookie = loginResponse.headers.get('set-cookie').split(';')[0];
-  const call = async (path, { method = 'GET', body } = {}) => {
-    const response = await fetch(base + path, { method, headers: { Cookie: cookie, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const login = async (username, password) => {
+    const response = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+    return response.headers.get('set-cookie').split(';')[0];
+  };
+  const adminCookie = await login('admin', 'Admin123!');
+  const call = async (path, { method = 'GET', body, cookie = adminCookie } = {}) => {
+    const response = await fetch(base + path, { method, headers: { ...(cookie ? { Cookie: cookie } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
     return { response, payload: await response.json() };
   };
-  return { app, call, close: async () => { await app.close(); rmSync(directory, { recursive: true, force: true }); } };
+  return { app, call, login, close: async () => { await app.close(); rmSync(directory, { recursive: true, force: true }); } };
 }
 
 test('template package is versioned, contains only reusable design, and receives a new workbook identity', () => {
@@ -60,17 +63,48 @@ test('template package rejects unsafe workbook dimensions and stored cell coordi
   assert.ok(report.issues.some((item) => item.message.includes('行坐标')));
 });
 
+test('malformed worksheet content returns compatibility issues instead of throwing', () => {
+  const report = validateTemplatePackage({
+    format: 'myexcel-template-package', version: 1,
+    application: { name: '畸形模板', description: '' },
+    template: { snapshot: { sheetOrder: ['broken'], sheets: { broken: null } }, templateConfig: {}, dataSourceConfig: {} },
+  });
+  assert.equal(report.valid, false);
+  assert.ok(report.issues.some((item) => item.path.includes('sheets.broken')));
+  assert.deepEqual(report.summary, { sheets: 1, formulas: 0, unsupportedFormulas: 0, hasBusinessModel: false });
+});
+
+test('malformed business rules return compatibility issues instead of throwing', () => {
+  const { model, snapshot } = orderFixture();
+  model.rules = { lookups: {} };
+  const report = validateTemplatePackage({
+    format: 'myexcel-template-package', version: 1,
+    application: { name: '畸形规则', description: '' },
+    template: { snapshot, templateConfig: { businessModel: model }, dataSourceConfig: {} },
+  });
+  assert.equal(report.valid, false);
+  assert.ok(report.issues.some((item) => item.path === 'template.templateConfig.businessModel'));
+});
+
 test('template package migrates between two clean instances without records or permissions', async () => {
   const source = await application();
   const target = await application();
   try {
+    assert.equal((await source.call('/api/v1/template-packages/validate', { method: 'POST', body: {}, cookie: null })).response.status, 401);
+    const viewerCookie = await source.login('viewer', 'Viewer123!');
+    assert.equal((await source.call('/api/v1/template-packages/validate', { method: 'POST', body: {}, cookie: viewerCookie })).response.status, 403);
+    const malformed = await target.call('/api/v1/template-packages/validate', { method: 'POST', body: { format: 'myexcel-template-package', version: 1, application: { name: '畸形模板', description: '' }, template: { snapshot: { sheetOrder: ['broken'], sheets: { broken: null } }, templateConfig: {}, dataSourceConfig: {} } } });
+    assert.equal(malformed.response.status, 422);
+    assert.equal(malformed.payload.report.valid, false);
     const admin = source.app.store.authenticate('admin', 'Admin123!');
     const { model, snapshot } = orderFixture();
     const workbook = source.app.store.createWorkbook({ name: '可迁移通用模板', description: '只含合成结构', snapshot, templateConfig: { businessModel: model }, dataSourceConfig: { type: 'static' }, userId: admin.id });
     const sourceEditor = source.app.store.listUsers().find((user) => user.username === 'editor');
     source.app.store.savePermissions({ id: workbook.id, permissions: [{ userId: sourceEditor.id, accessLevel: 'design' }], userId: admin.id });
+    assert.equal((await source.call(`/api/v1/templates/${workbook.id}/package`, { cookie: viewerCookie })).response.status, 404, 'viewer cannot export an unpublished draft');
     const exported = await source.call(`/api/v1/templates/${workbook.id}/package`);
     assert.equal(exported.response.status, 200);
+    assert.match(exported.response.headers.get('content-disposition'), /\.mxapp\.json/);
     const validated = await target.call('/api/v1/template-packages/validate', { method: 'POST', body: exported.payload });
     assert.equal(validated.response.status, 200);
     const imported = await target.call('/api/v1/template-packages', { method: 'POST', body: exported.payload });
