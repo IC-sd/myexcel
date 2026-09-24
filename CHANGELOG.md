@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-24
+
+Public release candidate with the versioned API, portable template packages, and keyboard navigation.
+
 ### Added
 
 - Versioned `/api/v1` HTTP/JSON runtime contract and OpenAPI 3.1 document.
@@ -24,7 +28,7 @@ All notable changes to this project are documented in this file.
 
 ## [0.2.0] - 2026-09-19
 
-First public preview of the generic spreadsheet application builder.
+Initial public preview source baseline of the generic spreadsheet application builder.
 
 ### Added
 
