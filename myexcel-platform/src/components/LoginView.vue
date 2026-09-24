@@ -47,7 +47,7 @@ function useDemo(account) {
       <form @submit.prevent="submit">
         <label>账号<input v-model="username" autocomplete="username" /></label>
         <label>密码<input v-model="password" type="password" autocomplete="current-password" /></label>
-        <p v-if="error" class="form-error">{{ error }}</p>
+        <p v-if="error" class="form-error" role="alert">{{ error }}</p>
         <button class="primary-button login-button" :disabled="busy">{{ busy ? '正在登录…' : '进入工作台' }}</button>
       </form>
       <div class="demo-accounts">

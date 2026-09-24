@@ -10,6 +10,7 @@ All notable changes to this project are documented in this file.
 - Portable `.mxapp.json` template packages with validation and clean-instance migration.
 - Browser import/export entry for design-only template packages.
 - Reproducible lazy-loading bundle budgets and synthetic 100/1,000/10,000-row benchmark.
+- Keyboard skip navigation, visible focus indicators, and current-view announcements in the application shell.
 
 ### Security
 

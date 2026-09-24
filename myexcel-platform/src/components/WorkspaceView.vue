@@ -401,11 +401,12 @@ async function openVersions() {
 
 <template>
   <div class="workspace-shell">
+    <a class="skip-link" href="#workspace-content" @click.prevent="workspaceMain?.focus()">跳转到主要内容</a>
     <header class="topbar">
       <div class="topbar-brand"><div class="brand-mark small">GS</div><div><strong>表格应用构建平台</strong><small>通用类 Excel 应用底座</small></div></div>
-      <nav class="mode-nav">
-        <button :disabled="busy" :class="{ active: ['workbook', 'records'].includes(viewMode) || (viewMode === 'published' && !canDesign) }" @click="switchMode('workbook')">工作人员端</button>
-        <button v-if="canDesign" :disabled="busy" :class="{ active: ['designer', 'published', 'template'].includes(viewMode) }" @click="switchMode('designer')">管理设计端</button>
+      <nav class="mode-nav" aria-label="使用视图">
+        <button :disabled="busy" :aria-current="['workbook', 'records'].includes(viewMode) || (viewMode === 'published' && !canDesign) ? 'page' : undefined" :class="{ active: ['workbook', 'records'].includes(viewMode) || (viewMode === 'published' && !canDesign) }" @click="switchMode('workbook')">工作人员端</button>
+        <button v-if="canDesign" :disabled="busy" :aria-current="['designer', 'published', 'template'].includes(viewMode) ? 'page' : undefined" :class="{ active: ['designer', 'published', 'template'].includes(viewMode) }" @click="switchMode('designer')">管理设计端</button>
       </nav>
       <div class="topbar-actions">
         <span class="role-chip">{{ roleName }}</span>
@@ -414,13 +415,13 @@ async function openVersions() {
       </div>
     </header>
 
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="应用工作簿">
       <div class="sidebar-heading">
         <div><span class="section-kicker">WORKBOOKS</span><h2>应用工作簿</h2></div>
-        <button v-if="canEdit" class="icon-button" :disabled="busy" title="新建工作簿" @click="showCreate = true">＋</button>
+        <button v-if="canEdit" class="icon-button" :disabled="busy" title="新建工作簿" aria-label="新建工作簿" @click="showCreate = true">＋</button>
       </div>
       <div class="workbook-list">
-        <button v-for="book in workbooks" :key="book.id" :disabled="busy" :class="['workbook-item', { active: active?.id === book.id }]" :aria-label="`${book.name}，${book.status === 'published' ? '已发布' : '草稿'}`" :title="book.name" @click="selectWorkbook(book)">
+        <button v-for="book in workbooks" :key="book.id" :disabled="busy" :class="['workbook-item', { active: active?.id === book.id }]" :aria-current="active?.id === book.id ? 'true' : undefined" :aria-label="`${book.name}，${book.status === 'published' ? '已发布' : '草稿'}`" :title="book.name" @click="selectWorkbook(book)">
           <span class="workbook-icon">▦</span>
           <span class="workbook-copy"><strong>{{ book.name }}</strong><small>版本 {{ book.version }} · {{ book.status === 'published' ? '已发布' : '草稿' }}</small></span>
         </button>
@@ -431,7 +432,7 @@ async function openVersions() {
       </div>
     </aside>
 
-    <main ref="workspaceMain" :class="['workspace-main', { 'designer-main': ['designer', 'records'].includes(viewMode) }]" :aria-busy="busy">
+    <main id="workspace-content" ref="workspaceMain" tabindex="-1" :class="['workspace-main', { 'designer-main': ['designer', 'records'].includes(viewMode) }]" :aria-busy="busy">
       <DesignerPanel v-if="viewMode === 'designer'" ref="designer" :workbook="active" :user="user" @updated="handleDesignUpdated" @created="handleBenchmarkCreated" @preview="switchMode('published')" />
       <BusinessRecords v-if="viewMode === 'records' && active" :key="active.id" ref="recordEditor" :workbook-id="active.id" :can-design="canDesign" @edit-template="switchMode('template')" />
       <section v-show="!['designer', 'records'].includes(viewMode)" class="workbook-toolbar">
@@ -441,8 +442,8 @@ async function openVersions() {
         </div>
         <div class="toolbar-actions">
           <template v-if="viewMode === 'published'"><span class="published-badge">已发布固定版本 v{{ published?.publishedVersion }}</span><button v-if="canDesign" class="secondary-button" @click="switchMode('designer')">返回管理设计端</button></template>
-          <template v-else><input v-if="canEdit" ref="fileInput" class="visually-hidden" type="file" accept=".xlsx" @change="importFile" />
-          <input v-if="canEdit" ref="packageInput" class="visually-hidden" type="file" accept=".mxapp.json,application/json" @change="importPackage" />
+          <template v-else><input v-if="canEdit" ref="fileInput" class="visually-hidden" tabindex="-1" aria-hidden="true" type="file" accept=".xlsx" @change="importFile" />
+          <input v-if="canEdit" ref="packageInput" class="visually-hidden" tabindex="-1" aria-hidden="true" type="file" accept=".mxapp.json,application/json" @change="importPackage" />
           <button v-if="viewMode === 'template' && canDesign" class="secondary-button" :disabled="busy || !active" @click="captureBindingSelection">绑定当前选区</button>
           <details ref="ioMenu" class="toolbar-menu"><summary class="secondary-button">导入 / 导出</summary><div><button v-if="canEdit" :disabled="busy" @click="fileInput.click()">导入 XLSX</button><button :disabled="!active" @click="exportWorkbook">导出 XLSX</button><span></span><button v-if="canEdit" :disabled="busy" @click="packageInput.click()">导入模板包</button><button :disabled="!active" @click="exportPackage">导出模板包</button><small>模板包只迁移模板、模型和规则，不包含业务记录与权限。</small></div></details>
           <button v-if="active?.templateConfig?.compatibilityReport" class="secondary-button" :disabled="!active" @click="showCompatibility = true">兼容性报告</button><button class="secondary-button" :disabled="!active" @click="openVersions">版本记录</button>
@@ -457,14 +458,14 @@ async function openVersions() {
       </section>
 
       <footer v-show="!['designer', 'records'].includes(viewMode)" :class="['statusbar', messageType]">
-        <span class="status-indicator"></span><span>{{ message }}</span>
+        <span class="status-indicator" aria-hidden="true"></span><span role="status">{{ message }}</span>
         <span class="status-meta" v-if="active">本地服务已连接 · {{ viewMode === 'published' ? `发布版本 ${published?.publishedVersion || '-'}` : `工作簿版本 ${active.version}` }}</span>
       </footer>
     </main>
 
     <div v-if="showCreate" class="modal-backdrop" @click.self="showCreate = false">
       <form class="modal-card compact" @submit.prevent="createWorkbook">
-        <div class="modal-title"><div><span class="section-kicker">NEW WORKBOOK</span><h2>新建工作簿</h2></div><button type="button" class="icon-button" @click="showCreate = false">×</button></div>
+        <div class="modal-title"><div><span class="section-kicker">NEW WORKBOOK</span><h2>新建工作簿</h2></div><button type="button" class="icon-button" aria-label="关闭新建工作簿" @click="showCreate = false">×</button></div>
         <label>工作簿名称<input v-model="newName" autofocus /></label>
         <div class="modal-actions"><button type="button" class="secondary-button" :disabled="busy" @click="showCreate = false">取消</button><button class="primary-button" :disabled="busy">创建并打开</button></div>
       </form>
@@ -472,19 +473,19 @@ async function openVersions() {
 
     <div v-if="showVersions" class="modal-backdrop" @click.self="showVersions = false">
       <section class="modal-card">
-        <div class="modal-title"><div><span class="section-kicker">VERSION HISTORY</span><h2>{{ active?.name }}</h2></div><button class="icon-button" @click="showVersions = false">×</button></div>
+        <div class="modal-title"><div><span class="section-kicker">VERSION HISTORY</span><h2>{{ active?.name }}</h2></div><button class="icon-button" aria-label="关闭版本记录" @click="showVersions = false">×</button></div>
         <div class="version-list">
           <div v-for="version in versions" :key="version.version" class="version-item"><span class="version-number">v{{ version.version }}</span><div><strong>{{ version.savedBy }}</strong><small>{{ new Date(version.savedAt).toLocaleString('zh-CN') }}</small></div></div>
         </div>
       </section>
     </div>
     <div v-if="showCompatibility" class="modal-backdrop" @click.self="showCompatibility = false">
-      <section class="modal-card compatibility-card"><div class="modal-title"><div><span class="section-kicker">XLSX COMPATIBILITY</span><h2>{{ active?.name }} · 导入报告</h2></div><button class="icon-button" @click="showCompatibility = false">×</button></div><p>此报告说明导入结果，不代表 Excel 全量兼容。原文件应保留为高级版式和计算的依据。</p><div class="compat-summary"><span>工作表 {{ active.templateConfig.compatibilityReport.summary.sheets }}</span><span>公式 {{ active.templateConfig.compatibilityReport.summary.formulas }}</span><span>可用 {{ active.templateConfig.compatibilityReport.summary.supportedFormulas }}</span><span>需处理 {{ active.templateConfig.compatibilityReport.summary.unsupportedFormulas }}</span></div><div class="compat-list"><div v-for="feature in active.templateConfig.compatibilityReport.features" :key="feature.id" :class="`compat-${feature.status}`"><strong>{{ feature.label }}</strong><span>{{ feature.status === 'retained' ? '保留' : feature.status === 'partial' ? '部分支持' : feature.status === 'absent' ? '未发现' : '不导入' }}</span><small>{{ feature.detail }}</small></div></div><details v-if="active.templateConfig.compatibilityReport.formulas.length"><summary>公式支持矩阵（{{ active.templateConfig.compatibilityReport.formulas.length }} 个）</summary><ul><li v-for="formula in active.templateConfig.compatibilityReport.formulas" :key="`${formula.sheetId}:${formula.address}`"><b>{{ formula.sheetId }}!{{ formula.address }}</b> · {{ formula.functions.join('、') || '基础引用' }} · {{ formula.supported ? '可展示计算' : formula.reasons.join('；') }}</li></ul></details><details v-if="active.templateConfig.compatibilityReport.warnings.length"><summary>降级提示（{{ active.templateConfig.compatibilityReport.warnings.length }} 项）</summary><ul><li v-for="warning in active.templateConfig.compatibilityReport.warnings" :key="warning">{{ warning }}</li></ul></details></section>
+      <section class="modal-card compatibility-card"><div class="modal-title"><div><span class="section-kicker">XLSX COMPATIBILITY</span><h2>{{ active?.name }} · 导入报告</h2></div><button class="icon-button" aria-label="关闭导入报告" @click="showCompatibility = false">×</button></div><p>此报告说明导入结果，不代表 Excel 全量兼容。原文件应保留为高级版式和计算的依据。</p><div class="compat-summary"><span>工作表 {{ active.templateConfig.compatibilityReport.summary.sheets }}</span><span>公式 {{ active.templateConfig.compatibilityReport.summary.formulas }}</span><span>可用 {{ active.templateConfig.compatibilityReport.summary.supportedFormulas }}</span><span>需处理 {{ active.templateConfig.compatibilityReport.summary.unsupportedFormulas }}</span></div><div class="compat-list"><div v-for="feature in active.templateConfig.compatibilityReport.features" :key="feature.id" :class="`compat-${feature.status}`"><strong>{{ feature.label }}</strong><span>{{ feature.status === 'retained' ? '保留' : feature.status === 'partial' ? '部分支持' : feature.status === 'absent' ? '未发现' : '不导入' }}</span><small>{{ feature.detail }}</small></div></div><details v-if="active.templateConfig.compatibilityReport.formulas.length"><summary>公式支持矩阵（{{ active.templateConfig.compatibilityReport.formulas.length }} 个）</summary><ul><li v-for="formula in active.templateConfig.compatibilityReport.formulas" :key="`${formula.sheetId}:${formula.address}`"><b>{{ formula.sheetId }}!{{ formula.address }}</b> · {{ formula.functions.join('、') || '基础引用' }} · {{ formula.supported ? '可展示计算' : formula.reasons.join('；') }}</li></ul></details><details v-if="active.templateConfig.compatibilityReport.warnings.length"><summary>降级提示（{{ active.templateConfig.compatibilityReport.warnings.length }} 项）</summary><ul><li v-for="warning in active.templateConfig.compatibilityReport.warnings" :key="warning">{{ warning }}</li></ul></details></section>
     </div>
 
     <div v-if="showBinding" class="modal-backdrop" @click.self="showBinding = false">
       <form class="modal-card compact" @submit.prevent="applySelectionBinding">
-        <div class="modal-title"><div><span class="section-kicker">CELL BINDING</span><h2>绑定所选表格区域</h2></div><button type="button" class="icon-button" @click="showBinding = false">×</button></div>
+        <div class="modal-title"><div><span class="section-kicker">CELL BINDING</span><h2>绑定所选表格区域</h2></div><button type="button" class="icon-button" aria-label="关闭区域绑定" @click="showBinding = false">×</button></div>
         <p>当前选区：<strong>{{ bindingSelection?.sheetId }}!{{ bindingSelection?.address }}</strong></p>
         <label>绑定类型<select v-model="bindingKind" @change="bindingFieldId = bindingKind === 'main' ? (bindingMainFields[0]?.id || '') : (bindingDetailFields[0]?.id || '')"><option value="main">主表单元格</option><option value="detail" :disabled="!bindingModel?.document.details.length">明细单列区域</option></select></label>
         <label v-if="bindingKind === 'detail'">明细区域<select v-model="bindingDetailId" @change="bindingFieldId = bindingDetailFields[0]?.id || ''"><option v-for="detail in bindingModel.document.details" :key="detail.id" :value="detail.id">{{ detail.id }}</option></select></label>

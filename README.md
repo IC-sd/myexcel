@@ -42,6 +42,7 @@ Windows PowerShell 中也可以使用 `npm.cmd` 执行相同脚本。
 - 可在两个实例间迁移的 `.mxapp.json` 模板包；
 - 版本化 HTTP/JSON API 与 OpenAPI 说明；
 - 可重复执行的懒加载包体和 100/1,000/10,000 行性能基准；
+- 工作台键盘跳转、可见焦点和当前视图提示；
 - 可选 MySQL 记录适配器。
 
 扩展入口见 [API v1](myexcel-platform/docs/API_V1.md)、[模板包](myexcel-platform/docs/TEMPLATE_PACKAGES.md) 与 [性能基线](myexcel-platform/docs/PERFORMANCE.md)。完整边界、架构和路线见 [项目说明](myexcel-platform/README.md) 与 [当前进度](myexcel-platform/docs/PHASE1_PROGRESS.md)。
