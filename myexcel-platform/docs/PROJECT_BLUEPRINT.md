@@ -593,7 +593,7 @@ WorkbookTemplate: 采购订单
 | 前端应用 | Vue 3.5.21 | Single File Component、`<script setup>`、Composition API；业务页面统一 Vue |
 | 表格内核 | `@univerjs/presets` 0.15.5 | Sheets Core preset、中文资源和表格样式；用于表格编辑及公式交互，不提供完整业务平台 |
 | 内核配套依赖 | react / react-dom 18.3.1；rxjs 7.8.2 | 保留现有依赖组合，随表格内核统一验证；不作为另建 React 业务界面的依据 |
-| 构建 | Vite 7.1.4；`@vitejs/plugin-vue` 6.0.1 | 使用现有 vite.config.js；不另起 Webpack/Next/Nuxt 构建体系 |
+| 构建 | Vite 7.3.5；`@vitejs/plugin-vue` 6.0.1 | 使用现有 vite.config.js；不另起 Webpack/Next/Nuxt 构建体系 |
 | 页面样式与状态 | 原生 CSS、Vue 响应式状态 | 现有 `src/styles.css` 和 Vue 组件；尚未采用统一第三方 UI 库、Pinia 或 Vue Router，不能各自引入不同方案 |
 | 前端请求 | 浏览器 fetch，统一 `src/api.js` | 同源 `/api`；普通 JSON 与文件传输沿用现有封装，不在组件散落另一套 HTTP 客户端 |
 | 后端服务 | Node.js `node:http` | 当前为模块化单体原型，无 Express/Nest/Spring Boot；新接口沿用现有路由与服务分层 |
@@ -923,7 +923,7 @@ Nop Entropy 当前作为设计思想和局部技术候选：
 - 自有代码采用 MIT License，第三方依赖保留各自许可证并维护第三方说明；
 - 公开仓库从清洗后的独立根提交开始，不公开旧业务历史；
 - 默认业务记录使用本地 JSON 适配器，MySQL 为显式配置的可选适配器；
-- Node.js 24 为首个 release 的运行基线，CI 先覆盖 Linux，Windows 已本地验证；macOS 通过同一 Node/npm 命令支持但尚无独立 CI 证据。
+- Node.js 24 为首个 release 的运行基线；CI 覆盖 Ubuntu 与 macOS，Windows 在本地验证。
 
 ---
 
@@ -935,14 +935,12 @@ Nop Entropy 当前作为设计思想和局部技术候选：
 |---|---|
 | 产品与模式 | 开源类 Excel 应用构建平台；只有设计模式和运行模式，发布是状态，不是第三种模式 |
 | 产品方向 | 以低门槛表格应用搭建为核心；Univer 只作为表格交互底座，项目重点展示模板、结构化记录和表间关系如何协同 |
-| 当前范围 | 阶段 1 已完成；阶段 2 优先公开发布质量和可安装性，阶段 3 建通用扩展能力，阶段 4 只做可关闭的生态与实验 |
 | 计算 | 前端公式、服务端权威规则、专业计算插件三层；关键业务结果不能只信任浏览器 |
 | 表间关联 | 稳定记录关系，区分实时引用、业务快照和事件回写；禁止无规则双向同步 |
 | 当前存储 | 模板/身份使用 SQLite；业务记录默认使用本地 JSON，配置后可切换既有 MySQL 适配器 |
 | 当前交互 | 绑定字段/明细入口和原表格只读投影是过渡实现，不能替代发布模板内直接填报目标 |
 | 技术基线 | 第 11 节为所有协作者统一基线；不再以接入企业 Java 平台、完整 BPMN 或 Redis 为默认演进目标 |
 | 公开边界 | 公司标识、私人路径、真实资料、秘密和未经审核的 Git 历史不得进入公开仓库；只提交可再生成的合成样例 |
-| 执行状态 | 阶段 1 已验收；阶段 2 正在完成零依赖启动、公开仓库文件、CI 和首个 release |
 | 文档协作 | 按 R-006/R-008 一处维护、分层读取；文档对话维护基线，执行对话实施并回写当前交接 |
 
 ---
