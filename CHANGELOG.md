@@ -8,6 +8,10 @@ All notable changes to this project are documented in this file.
 
 Public release candidate with the versioned API, portable template packages, and keyboard navigation.
 
+### Security
+
+- Pin the patched transitive `nanoid` 5.1.16 used by Univer and update Vite to 7.3.5; production dependency audit reports no known vulnerabilities.
+
 ### Added
 
 - Versioned `/api/v1` HTTP/JSON runtime contract and OpenAPI 3.1 document.
